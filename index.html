@@ -3,60 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WebCMD - Terminal Online</title>
+  <title>WebCMD • Terminal Online</title>
   <link rel="stylesheet" href="style.css">
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- Login -->
-  <div id="login-screen" class="screen active">
-    <div class="login-box">
+  <!-- Pantalla de autenticación -->
+  <div id="auth-screen" class="screen active">
+    <div class="auth-box">
       <h1>WebCMD</h1>
-      <p>Terminal Online 2026</p>
-      <form id="login-form">
-        <input type="text" id="username" placeholder="Usuario" autocomplete="off" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        <button type="submit">Iniciar sesión</button>
+      <p class="subtitle">Terminal simulada • 2026</p>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="login">Iniciar sesión</button>
+        <button class="tab" data-tab="register">Registrarse</button>
+      </div>
+
+      <!-- Login -->
+      <form id="login-form" class="form active">
+        <input type="text" id="login-username" placeholder="Usuario" autocomplete="off" required>
+        <input type="password" id="login-password" placeholder="Contraseña" required>
+        <button type="submit">Entrar</button>
+        <div id="login-error" class="error"></div>
       </form>
-      <p style="margin:20px 0 10px; color:#0a0;">¿Nuevo aquí?</p>
-      <button onclick="showRegister()" class="reg-btn">Registrarse</button>
-      <div id="login-error" class="error"></div>
-    </div>
-  </div>
 
-  <!-- Registro -->
-  <div id="register-screen" class="screen">
-    <div class="login-box">
-      <h1>Crear cuenta</h1>
-      <form id="register-form">
-        <input type="text" id="reg-username" placeholder="Nombre de usuario" required autocomplete="off">
-        <input type="email" id="reg-email" placeholder="Correo electrónico" required autocomplete="off">
-        <input type="password" id="reg-password" placeholder="Contraseña" required>
-        <button type="submit">Registrarse</button>
+      <!-- Registro -->
+      <form id="register-form" class="form">
+        <input type="text" id="reg-username" placeholder="Usuario (mín 3 caracteres)" autocomplete="off" required>
+        <input type="password" id="reg-password" placeholder="Contraseña (mín 6 caracteres)" required>
+        <input type="password" id="reg-password-confirm" placeholder="Repite contraseña" required>
+        <button type="submit">Crear cuenta</button>
+        <div id="register-error" class="error"></div>
       </form>
-      <button onclick="showLogin()" class="back-btn">Volver al login</button>
     </div>
   </div>
 
-  <!-- Verificación correo -->
-  <div id="email-confirm-screen" class="screen">
-    <div class="login-box">
-      <h1>Verifica tu correo</h1>
-      <p>Te enviamos un código a:</p>
-      <p id="sent-email" style="color:#0ff;font-size:1.4em;margin:15px 0;"></p>
-      <input type="text" id="verify-code-input" placeholder="Código de 6 dígitos" maxlength="6" style="font-size:1.6em;text-align:center;letter-spacing:10px;">
-      <button onclick="verifyCode()" style="margin-top:20px;background:#0f0;color:#000;">Verificar cuenta</button>
-      <button onclick="showLogin()" style="margin-top:10px;">Cancelar</button>
-    </div>
-  </div>
-
-  <!-- Selector OS -->
+  <!-- Selector de sistema operativo -->
   <div id="os-selector" class="screen">
     <div class="selector-box">
-      <h1>Elige entorno</h1>
-      <button onclick="selectOS('linux')" class="os-btn linux-btn">Linux Bash</button>
-      <button onclick="selectOS('windows')" class="os-btn windows-btn">Windows CMD</button>
+      <h1>Bienvenido</h1>
+      <p>Elige tu entorno de terminal</p>
+      <button onclick="selectOS('linux')" class="os-btn linux">Linux (bash)</button>
+      <button onclick="selectOS('windows')" class="os-btn windows">Windows (cmd)</button>
       <button onclick="logout()" class="logout-btn">Salir</button>
     </div>
   </div>
@@ -65,7 +56,7 @@
   <div id="terminal-screen" class="screen">
     <div class="top-bar">
       <span id="terminal-title">WebCMD</span>
-      <div>
+      <div class="actions">
         <button onclick="switchOS()" class="top-btn">Cambiar SO</button>
         <button onclick="logout()" class="top-btn logout">Logout</button>
       </div>
@@ -74,7 +65,7 @@
       <div id="output"></div>
       <div class="input-line">
         <span id="prompt"></span>
-        <input type="text" id="command-input" autocomplete="off" spellcheck="false">
+        <input type="text" id="command-input" autocomplete="off" spellcheck="false" autofocus>
       </div>
     </div>
   </div>
