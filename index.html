@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WebCMD - Terminal Online</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Login (solo admin) -->
+  <!-- Login -->
   <div id="login-screen" class="screen active">
     <div class="login-box">
       <h1>WebCMD</h1>
-      <p class="subtitle">Terminal Online</p>
+      <p>Terminal Online 2026</p>
       <form id="login-form">
-        <input type="text" id="username" placeholder="Usuario" value="tnight" required>
+        <input type="text" id="username" placeholder="Usuario" value="tnight" autocomplete="off" required>
         <input type="password" id="password" placeholder="Contraseña" required>
-        <button type="submit">Iniciar Sesión</button>
+        <button type="submit">Entrar</button>
       </form>
       <div id="login-error" class="error"></div>
     </div>
@@ -25,21 +25,20 @@
   <!-- Elegir username (visitantes) -->
   <div id="username-picker" class="screen">
     <div class="selector-box">
-      <h1>¡Bienvenido a WebCMD!</h1>
-      <p>Escribe tu nombre de usuario para esta sesión</p>
+      <h1>Bienvenido</h1>
+      <p>Elige tu nombre de usuario</p>
       <input type="text" id="custom-username" placeholder="Tu nombre" maxlength="20" autocomplete="off">
       <button onclick="setCustomUsername()">Continuar</button>
-      <button onclick="logout()" class="logout-btn">Volver</button>
     </div>
   </div>
 
-  <!-- Selector de OS -->
+  <!-- Selector OS -->
   <div id="os-selector" class="screen">
     <div class="selector-box">
-      <h1>Elige tu entorno</h1>
-      <button onclick="selectOS('linux')" class="os-btn linux-btn">Linux Bash</button>
-      <button onclick="selectOS('windows')" class="os-btn windows-btn">Windows CMD</button>
-      <button onclick="logout()" class="logout-btn">Cerrar sesión</button>
+      <h1>Elige entorno</h1>
+      <button class="os-btn linux-btn" onclick="selectOS('linux')">Linux Bash</button>
+      <button class="os-btn windows-btn" onclick="selectOS('windows')">Windows CMD</button>
+      <button class="logout-btn" onclick="logout()">Salir</button>
     </div>
   </div>
 
@@ -48,8 +47,8 @@
     <div class="top-bar">
       <span id="terminal-title">WebCMD</span>
       <div>
-        <button onclick="switchOS()" class="top-btn">Cambiar OS</button>
-        <button onclick="logout()" class="top-btn logout">Logout</button>
+        <button class="top-btn" onclick="switchOS()">Cambiar SO</button>
+        <button class="top-btn logout" onclick="logout()">Logout</button>
       </div>
     </div>
     <div id="terminal" class="terminal">
