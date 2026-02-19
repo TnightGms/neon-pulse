@@ -5,40 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WebCMD - Terminal Online</title>
   <link rel="stylesheet" href="style.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
-  <!-- Login -->
+  <!-- Pantalla de login -->
   <div id="login-screen" class="screen active">
     <div class="login-box">
       <h1>WebCMD</h1>
-      <p>Terminal Online 2026</p>
+      <p>Terminal Online</p>
       <form id="login-form">
-        <input type="text" id="username" placeholder="Usuario" value="tnight" autocomplete="off" required>
+        <input type="text" id="username" placeholder="Usuario" autocomplete="off" required>
         <input type="password" id="password" placeholder="Contraseña" required>
-        <button type="submit">Entrar</button>
+        <button type="submit">Iniciar sesión</button>
       </form>
+      <p style="margin:20px 0 10px; color:#0a0;">¿No tienes cuenta?</p>
+      <button onclick="showRegister()" class="reg-btn">Registrarse</button>
       <div id="login-error" class="error"></div>
     </div>
   </div>
 
-  <!-- Elegir username (visitantes) -->
-  <div id="username-picker" class="screen">
-    <div class="selector-box">
-      <h1>Bienvenido</h1>
-      <p>Elige tu nombre de usuario</p>
-      <input type="text" id="custom-username" placeholder="Tu nombre" maxlength="20" autocomplete="off">
-      <button onclick="setCustomUsername()">Continuar</button>
+  <!-- Pantalla de registro -->
+  <div id="register-screen" class="screen">
+    <div class="login-box">
+      <h1>Crear cuenta</h1>
+      <form id="register-form">
+        <input type="text" id="reg-username" placeholder="Nombre de usuario" required autocomplete="off">
+        <input type="email" id="reg-email" placeholder="Correo electrónico" required autocomplete="off">
+        <input type="password" id="reg-password" placeholder="Contraseña" required>
+        <button type="submit">Registrarse</button>
+      </form>
+      <button onclick="showLogin()" class="back-btn">Volver</button>
     </div>
   </div>
 
-  <!-- Selector OS -->
+  <!-- Pantalla de verificación de correo -->
+  <div id="email-confirm-screen" class="screen">
+    <div class="login-box">
+      <h1>Verifica tu correo</h1>
+      <p>Te hemos enviado un código de 6 dígitos a:</p>
+      <p id="sent-email" style="color:#0ff; font-size:1.3em; margin:15px 0;"></p>
+
+      <div class="fake-email">
+        <strong>Asunto:</strong> Verifica tu cuenta WebCMD<br><br>
+        Hola <span id="email-username"></span>,<br><br>
+        Tu código es: <strong id="shown-code">------</strong><br><br>
+        (Si no lo ves en la bandeja, revisa spam)
+      </div>
+
+      <input type="text" id="verify-code-input" placeholder="Pega aquí el código de 6 dígitos" maxlength="6" style="margin:20px 0; width:100%; text-align:center; font-size:1.4em;">
+      <button onclick="verifyCode()" style="background:#0f0; color:#000; padding:12px; font-size:1.1em;">Verificar y activar cuenta</button>
+      <button onclick="showLogin()" style="margin-top:15px;">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Selector de SO -->
   <div id="os-selector" class="screen">
     <div class="selector-box">
-      <h1>Elige entorno</h1>
-      <button class="os-btn linux-btn" onclick="selectOS('linux')">Linux Bash</button>
-      <button class="os-btn windows-btn" onclick="selectOS('windows')">Windows CMD</button>
-      <button class="logout-btn" onclick="logout()">Salir</button>
+      <h1>Elige tu terminal</h1>
+      <button onclick="selectOS('linux')" class="os-btn linux-btn">Linux (bash)</button>
+      <button onclick="selectOS('windows')" class="os-btn windows-btn">Windows (cmd)</button>
+      <button onclick="logout()" class="logout-btn">Salir</button>
     </div>
   </div>
 
@@ -47,11 +74,11 @@
     <div class="top-bar">
       <span id="terminal-title">WebCMD</span>
       <div>
-        <button class="top-btn" onclick="switchOS()">Cambiar SO</button>
-        <button class="top-btn logout" onclick="logout()">Logout</button>
+        <button onclick="switchOS()" class="top-btn">Cambiar SO</button>
+        <button onclick="logout()" class="top-btn logout">Logout</button>
       </div>
     </div>
-    <div id="terminal" class="terminal">
+    <div class="terminal">
       <div id="output"></div>
       <div class="input-line">
         <span id="prompt"></span>
