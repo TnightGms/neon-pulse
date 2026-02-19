@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neon Pulse — Feel the Night</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="stars"></div>
+  <div class="stars2"></div>
+  <div class="stars3"></div>
+
+  <header>
+    <nav class="glass">
+      <div class="logo">NEON PULSE</div>
+      <ul>
+        <li><a href="#home">Inicio</a></li>
+        <li><a href="#vibe">Vibe</a></li>
+        <li><a href="#join">Únete</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="hero-content">
+        <h1 data-aos="fade-up">Siente el pulso<span class="blink">_</span></h1>
+        <p data-aos="fade-up" data-aos-delay="200">Donde la noche nunca termina y el ritmo nunca se apaga.</p>
+        <button class="neon-btn" data-aos="zoom-in" data-aos-delay="400">Entrar al flujo →</button>
+      </div>
+    </section>
+
+    <section id="vibe" class="section">
+      <div class="card-grid">
+        <div class="card glass" data-aos="fade-right">
+          <h3>Visuals 8K</h3>
+          <p>Sin City vibes meets vaporwave dreams.</p>
+        </div>
+        <div class="card glass" data-aos="fade-up">
+          <h3>Beat drops 24/7</h3>
+          <p>Desde lo-fi cyber hasta dark synthwave.</p>
+        </div>
+        <div class="card glass" data-aos="fade-left">
+          <h3>Comunidad real</h3>
+          <p>Gente que vive en el mismo pulso que tú.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="join" class="section cta">
+      <h2>¿Listx para conectar?</h2>
+      <p>Entra al servidor, al chat, a la vida nocturna digital.</p>
+      <button class="neon-btn large">Unirme ahora</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>Neon Pulse © 2026 — No derechos reservados, comparte sin miedo</p>
+  </footer>
+
+  <!-- Librería ligera para animaciones al scroll (opcional pero queda brutal) -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init({ duration: 1000, once: true });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>
