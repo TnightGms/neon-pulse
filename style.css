@@ -1,68 +1,57 @@
+/* style.css */
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
 * { margin:0; padding:0; box-sizing:border-box; }
-
 body {
-  background:#0a0a0a; color:#0f0; font-family:'VT323', monospace; font-size:19px;
+  background:#0a0a0a; color:#0f0; font-family:'VT323', monospace; font-size:18px;
   height:100vh; overflow:hidden;
 }
 
-.screen {
-  position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.96);
-}
+.screen { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.95); }
 .screen.active { display:flex; }
 
 .login-box, .selector-box {
   background:#111; border:3px solid #0f0; padding:40px; width:380px; text-align:center;
-  box-shadow:0 0 40px #0f0;
+  box-shadow:0 0 30px #0f0;
 }
-h1 { font-size:46px; margin-bottom:8px; }
-p { color:#0a0; margin-bottom:25px; }
+
+h1 { font-size:42px; margin-bottom:10px; }
+p { margin-bottom:20px; color:#0a0; }
 
 input, button {
-  width:100%; padding:14px; margin:10px 0; background:#000; border:2px solid #0f0;
-  color:#0f0; font-family:inherit; font-size:19px;
+  width:100%; padding:12px; margin:10px 0; background:#000; border:2px solid #0f0;
+  color:#0f0; font-family:inherit; font-size:18px;
 }
-button:hover { background:#0f0; color:#000; transition:0.2s; }
+button { cursor:pointer; }
+button:hover { background:#0f0; color:#000; }
 
-.error { color:#f66; margin-top:10px; min-height:22px; }
+.error { color:#f66; margin-top:10px; }
 
-/* === TERMINAL SIN SOLAPAMIENTO === */
-#terminal-screen {
-  flex-direction: column;
+.reg-btn, .back-btn { background:#222; border-color:#0f0; color:#0f0; }
+.reg-btn:hover, .back-btn:hover { background:#0f0; color:#000; }
+
+.fake-email {
+  background:#000; border:2px solid #0f0; padding:20px; margin:20px 0; border-radius:8px;
+  text-align:left; line-height:1.5; font-size:17px;
 }
+
+#verify-code-input { font-size:1.5em; letter-spacing:8px; text-align:center; }
 
 .top-bar {
-  background:#111; padding:10px 16px; border-bottom:3px solid #0f0;
-  display:flex; justify-content:space-between; align-items:center; flex-shrink:0;
-  font-size:17px;
+  background:#111; padding:10px 20px; display:flex; justify-content:space-between;
+  border-bottom:3px solid #0f0; font-size:17px; flex-shrink:0;
 }
 
 .terminal {
-  flex: 1;
-  background:#000;
-  border:3px solid #222;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
+  flex:1; background:#000; border:3px solid #222; display:flex; flex-direction:column;
 }
-#output {
-  flex:1; padding:16px; overflow-y:auto; white-space:pre-wrap; line-height:1.35;
-}
-.input-line {
-  display:flex; padding:10px 16px; background:#111; border-top:2px solid #222;
-}
-#prompt { color:#0f0; margin-right:10px; white-space:nowrap; user-select:none; }
-#command-input {
-  flex:1; background:transparent; border:none; color:#0f0; font:inherit; font-size:19px; outline:none;
-}
+#output { flex:1; padding:16px; overflow-y:auto; white-space:pre-wrap; line-height:1.4; }
+.input-line { display:flex; padding:10px 16px; background:#111; border-top:2px solid #222; }
+#prompt { color:#0f0; margin-right:10px; white-space:nowrap; }
+#command-input { flex:1; background:transparent; border:none; color:#0f0; font:inherit; outline:none; }
 #command-input.windows { color:#0ff; }
 
-.error-line  { color:#f66; }
-.success-line { color:#0f0; }
-
-.os-btn { margin:15px 0; font-size:24px; }
+.os-btn { margin:15px 0; font-size:22px; }
 .linux-btn { border-color:#0f0; color:#0f0; }
 .windows-btn { border-color:#0ff; color:#0ff; }
 .logout-btn { margin-top:20px; border-color:#f66; color:#f66; }
