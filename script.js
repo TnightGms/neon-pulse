@@ -1,11 +1,6 @@
-// === TUS CLAVES EMAILJS ===
-const EMAILJS_SERVICE_ID  = "service_fdgeqz1";
-const EMAILJS_TEMPLATE_ID = "template_y60zk9a";
-const EMAILJS_PUBLIC_KEY  = "fzj5FvbnNDdda4Keq";
+const ADMIN_USER = "tnight";
+const ADMIN_PASS_HASH = "e5e9fa1ba31ecd1ae84f75caaa474f3a663f05f4"; 
 
-emailjs.init(EMAILJS_PUBLIC_KEY);
-
-// Variables globales
 let isAdmin = false;
 let username = "";
 let currentOS = "linux";
@@ -13,24 +8,16 @@ let currentPath = [];
 let commandHistory = [];
 let historyIndex = -1;
 let fs = null;
-let verificationCode = "";
-let pendingUser = null;
 
-const ADMIN_USER = "tnight";
-const ADMIN_PASS_ENCODED = "QW5jb3IyODk=";
-
-// Hash simple pero efectivo para frontend
-function hashPassword(pass) {
-  let hash = 0;
-  for (let i = 0; i < pass.length; i++) {
-    const char = pass.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return hash.toString(36);
+// ── Utilidades criptográficas ──
+async function sha256(str) {
+  const msgBuffer = new TextEncoder().encode(str);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// FS básico
+// ── Sistema de archivos virtual ──
 function createInitialFS() {
   return {
     type: "dir",
@@ -38,9 +25,14 @@ function createInitialFS() {
       home: {
         type: "dir",
         children: {
-          [username || "guest"]: {
+          [username]: {
             type: "dir",
-            children: { "welcome.txt": { type: "file", content: `Bienvenid@ ${username}! Escribe help.` }}
+            children: {
+              "welcome.txt": {
+                type: "file",
+                content: `Bienvenid@ ${username}!\n\nEscribe 'help' para ver comandos disponibles.`
+              }
+            }
           }
         }
       }
@@ -48,208 +40,320 @@ function createInitialFS() {
   };
 }
 
+function getCurrentDir() {
+  let dir = fs;
+  for (let segment of currentPath) {
+    if (dir.children?.[segment]) dir = dir.children[segment];
+    else return null;
+  }
+  return dir;
+}
+
 function saveState() {
-  localStorage.setItem("webcmd_state", JSON.stringify({ isAdmin, username, currentOS, currentPath, commandHistory, fs: JSON.stringify(fs) }));
+  localStorage.setItem("webcmd_state", JSON.stringify({
+    isAdmin,
+    username,
+    currentOS,
+    currentPath,
+    commandHistory,
+    fs: JSON.stringify(fs)
+  }));
 }
 
 function loadState() {
   const saved = localStorage.getItem("webcmd_state");
   if (saved) {
-    const d = JSON.parse(saved);
-    isAdmin = d.isAdmin || false;
-    username = d.username || "";
-    currentOS = d.currentOS || "linux";
-    currentPath = d.currentPath || ["home", username || "guest"];
-    commandHistory = d.commandHistory || [];
-    fs = d.fs ? JSON.parse(d.fs) : createInitialFS();
+    try {
+      const data = JSON.parse(saved);
+      isAdmin = data.isAdmin || false;
+      username = data.username || "";
+      currentOS = data.currentOS || "linux";
+      currentPath = data.currentPath || ["home", username || "guest"];
+      commandHistory = data.commandHistory || [];
+      fs = data.fs ? JSON.parse(data.fs) : createInitialFS();
+    } catch (e) {
+      localStorage.removeItem("webcmd_state");
+      location.reload();
+    }
   }
 }
 
-// Prompt y salida
+// ── Interfaz de terminal ──
 function updatePrompt() {
-  const p = document.getElementById("prompt");
+  const promptEl = document.getElementById("prompt");
   const input = document.getElementById("command-input");
+  const title = document.getElementById("terminal-title");
+
   if (currentOS === "linux") {
-    p.textContent = `${username}@webcmd:${currentPath.length ? "/" + currentPath.join("/") : "/"} $ `;
+    promptEl.textContent = `${username}@webcmd:${currentPath.length ? "/" + currentPath.join("/") : "/"} $ `;
+    input.classList.remove("windows");
   } else {
-    p.textContent = `C:\\Users\\${username}> `;
+    promptEl.textContent = `C:\\Users\\${username}${currentPath.length > 1 ? "\\" + currentPath.slice(2).join("\\") : ""}> `;
     input.classList.add("windows");
   }
-  document.getElementById("terminal-title").textContent = `WebCMD • ${username}${isAdmin ? " (ADMIN)" : ""}`;
+
+  title.textContent = `WebCMD • ${username}${isAdmin ? " (ADMIN)" : ""}`;
 }
 
-function append(text, cls = "") {
-  const out = document.getElementById("output");
+function appendOutput(text, className = "") {
+  const output = document.getElementById("output");
   const line = document.createElement("div");
   line.innerHTML = text.replace(/\n/g, "<br>");
-  if (cls) line.className = cls;
-  out.appendChild(line);
-  out.scrollTop = out.scrollHeight;
+  if (className) line.className = className;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
 }
 
-// ====================== COMANDOS COMPLETOS ======================
+// ── Comandos ──
 function executeCommand(cmd) {
   if (!cmd.trim()) return;
+
   commandHistory.push(cmd);
+  historyIndex = commandHistory.length;
   saveState();
 
   const args = cmd.trim().split(/\s+/);
-  const c = args[0].toLowerCase();
-  let out = "";
+  const command = args[0].toLowerCase();
 
-  if (c === "clear" || c === "cls") { document.getElementById("output").innerHTML = ""; return; }
-  if (c === "help") {
-    out = currentOS === "linux" 
-      ? "ls cd pwd cat mkdir touch rm echo history clear whoami date uptime fortune ifconfig tree reboot nano ping help"
-      : "dir cd type mkdir del echo history cls whoami date ver ipconfig tree reboot systeminfo ping help";
+  let output = "";
+
+  // Comandos universales
+  if (["clear", "cls"].includes(command)) {
+    document.getElementById("output").innerHTML = "";
+    return;
   }
-  else if (c === "echo") out = args.slice(1).join(" ");
-  else if (c === "history") out = commandHistory.map((v,i) => `${i+1}. ${v}`).join("\n");
-  else if (c === "whoami") out = username + (isAdmin ? " (ADMIN)" : "");
-  else if (c === "date") out = new Date().toLocaleString();
-  else if (c === "uptime") out = "Uptime: Siempre encendido desde 2026";
-  else if (c === "fortune") out = ["La noche es joven", "Error 404: vida social no encontrada", "Hoy es un buen día para hackear"][Math.floor(Math.random()*3)];
-  else if (c === "reboot") { append("Reiniciando sistema..."); setTimeout(() => location.reload(), 1200); return; }
-  else if ((c === "ifconfig" && currentOS==="linux") || (c === "ipconfig" && currentOS==="windows")) out = "IP: 192.168.1.42\nMAC: AA-BB-CC-DD-EE-FF";
-  else if (c === "ver" && currentOS==="windows") out = "WebCMD Windows Simulator v11.2026";
-  else if (c === "systeminfo" && currentOS==="windows") out = "Host: WEBC MD-2026\nOS: WebCMD Simulator";
-  else if (c === "tree") out = ".\n└── home\n    └── " + username + "\n        └── welcome.txt";
-  else if (c === "ping") out = "PING 8.8.8.8: 42 bytes, tiempo <1ms, TTL=128";
-  else if (c === "nano") out = args[1] ? `Abriendo ${args[1]}... (simulado)` : "nano: falta archivo";
 
-  // Comandos del sistema de archivos
+  if (command === "help") {
+    output = currentOS === "linux"
+      ? "ls  cd  pwd  cat  mkdir  touch  rm  echo  tree  history  whoami  date  uptime  fortune  ifconfig  ping  reboot  clear  help"
+      : "dir  cd  type  mkdir  del  echo  tree  history  whoami  date  ver  ipconfig  systeminfo  ping  reboot  cls  help";
+  }
+
+  else if (command === "whoami") output = username + (isAdmin ? " (admin)" : "");
+  else if (command === "date") output = new Date().toLocaleString();
+  else if (command === "uptime") output = "Uptime: siempre encendido";
+  else if (command === "fortune") output = ["La noche es joven...", "Error 404: vida social no encontrada.", "Hoy es un buen día para hackear"][Math.floor(Math.random()*3)];
+  else if (command === "reboot") { appendOutput("Reiniciando..."); setTimeout(() => location.reload(), 1200); return; }
+  else if (command === "echo") output = args.slice(1).join(" ");
+  else if (command === "history") output = commandHistory.map((v,i) => `${i+1}. ${v}`).join("\n");
+  else if (command === "ping") output = "PING 8.8.8.8: 64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=12 ms";
+  else if (command === "tree") output = ".\n└── home\n    └── " + username + "\n        └── welcome.txt";
+
+  // Comandos Linux
   else if (currentOS === "linux") {
-    if (c === "ls") out = Object.keys(getCurrentDir().children || {}).join("  ");
-    else if (c === "pwd") out = "/" + currentPath.join("/");
-    else if (c === "cd") out = cd(args[1]);
-    else if (c === "cat") out = cat(args[1]);
-    else if (c === "mkdir") out = mkdir(args[1]);
-    else if (c === "touch") out = touch(args[1]);
-    else if (c === "rm") out = rm(args[1]);
-    else out = `bash: ${c}: comando no encontrado`;
-  } else {
-    if (c === "dir") out = Object.keys(getCurrentDir().children || {}).join("\n");
-    else if (c === "cd") out = cd(args[1]);
-    else if (c === "type") out = cat(args[1]);
-    else if (c === "mkdir") out = mkdir(args[1]);
-    else if (c === "del") out = rm(args[1]);
-    else out = `'${c}' no se reconoce como comando`;
+    if (command === "ls") output = Object.keys(getCurrentDir().children || {}).join("  ");
+    else if (command === "pwd") output = "/" + currentPath.join("/");
+    else if (command === "cd") output = cd(args[1]);
+    else if (command === "cat") output = cat(args[1]);
+    else if (command === "mkdir") output = mkdir(args[1]);
+    else if (command === "touch") output = touch(args[1]);
+    else if (command === "rm") output = rm(args[1]);
+    else if (command === "ifconfig") output = "inet 192.168.1.42  netmask 255.255.255.0  broadcast 192.168.1.255";
+    else output = `bash: ${command}: comando no encontrado`;
   }
 
-  append(`<span style="color:#0f0">${document.getElementById("prompt").textContent}</span>${cmd}`);
-  append(out || "Comando ejecutado.", out.includes("no ") ? "error-line" : "");
+  // Comandos Windows
+  else {
+    if (command === "dir") {
+      output = Object.entries(getCurrentDir().children || {}).map(([k,v]) =>
+        v.type === "dir" ? `<span style="color:#44f">${k}</span>` : k
+      ).join("\n");
+    }
+    else if (command === "cd") output = cd(args[1]);
+    else if (command === "type") output = cat(args[1]);
+    else if (command === "mkdir") output = mkdir(args[1]);
+    else if (command === "del") output = rm(args[1]);
+    else if (command === "ipconfig") output = "IPv4 Address. . . . . . . . . . . : 192.168.1.42";
+    else if (command === "systeminfo") output = "Host Name:                 WEBC-MD-2026\nOS Name:                   WebCMD Simulator";
+    else if (command === "ver") output = "Microsoft WebCMD Simulator [Versión 11.2026.01]";
+    else output = `'${command}' no se reconoce como un comando interno o externo.`;
+  }
+
+  appendOutput(`<span style="color:#0f0">${document.getElementById("prompt").textContent}</span>${cmd}`);
+  appendOutput(output || "Comando ejecutado.", output.includes("no ") || output.includes("no se") ? "error" : "");
 }
 
-// Funciones FS
-function getCurrentDir() { let dir = fs; for (let p of currentPath) if (dir.children?.[p]) dir = dir.children[p]; return dir; }
+// ── Funciones del sistema de archivos ──
 function cd(target) {
   if (!target || target === "~" || target === "/") { currentPath = ["home", username]; return ""; }
   if (target === "..") { if (currentPath.length > 1) currentPath.pop(); return ""; }
-  const dir = getCurrentDir();
-  if (dir.children?.[target]?.type === "dir") { currentPath.push(target); return ""; }
-  return "No existe";
-}
-function cat(file) { return getCurrentDir().children?.[file]?.content || "Archivo no encontrado"; }
-function mkdir(name) { if (!name) return "Falta nombre"; const dir = getCurrentDir(); if (!dir.children[name]) dir.children[name] = {type:"dir", children:{}}; saveState(); return ""; }
-function touch(name) { if (!name) return "Falta nombre"; const dir = getCurrentDir(); if (!dir.children[name]) dir.children[name] = {type:"file", content:""}; saveState(); return ""; }
-function rm(name) { if (!name) return "Falta nombre"; const dir = getCurrentDir(); if (dir.children[name]) { delete dir.children[name]; saveState(); return ""; } return "No encontrado"; }
 
-// ====================== TERMINAL ======================
+  const dir = getCurrentDir();
+  if (dir?.children?.[target]?.type === "dir") {
+    currentPath.push(target);
+    return "";
+  }
+  return currentOS === "linux" ? "cd: no such file or directory: " + target : "El sistema no puede encontrar la ruta especificada.";
+}
+
+function cat(file) {
+  if (!file) return currentOS === "linux" ? "cat: falta operando" : "type: falta nombre de archivo";
+  const content = getCurrentDir()?.children?.[file]?.content;
+  return content !== undefined ? content : (currentOS === "linux" ? "cat: " + file + ": No such file or directory" : "El sistema no puede encontrar el archivo especificado.");
+}
+
+function mkdir(name) {
+  if (!name) return "Falta nombre de directorio";
+  const dir = getCurrentDir();
+  if (dir.children?.[name]) return "Ya existe";
+  dir.children[name] = { type: "dir", children: {} };
+  saveState();
+  return "";
+}
+
+function touch(name) {
+  if (!name) return "Falta nombre de archivo";
+  const dir = getCurrentDir();
+  if (!dir.children[name]) dir.children[name] = { type: "file", content: "" };
+  saveState();
+  return "";
+}
+
+function rm(name) {
+  if (!name) return "Falta nombre";
+  const dir = getCurrentDir();
+  if (dir.children?.[name]) {
+    delete dir.children[name];
+    saveState();
+    return "";
+  }
+  return currentOS === "linux" ? "rm: cannot remove '" + name + "': No such file or directory" : "No se pudo encontrar";
+}
+
+// ── Autenticación ──
+document.getElementById("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const user = document.getElementById("login-username").value.trim();
+  const pass = document.getElementById("login-password").value;
+
+  if (user === ADMIN_USER) {
+    const inputHash = await sha256(pass);
+    if (inputHash === ADMIN_PASS_HASH) {
+      isAdmin = true;
+      username = ADMIN_USER;
+      currentPath = ["home", username];
+      fs = createInitialFS();
+      saveState();
+      document.getElementById("auth-screen").classList.remove("active");
+      document.getElementById("os-selector").classList.add("active");
+      return;
+    }
+  }
+
+  // Usuarios registrados
+  const users = JSON.parse(localStorage.getItem("webcmd_users") || "[]");
+  const found = users.find(u => u.username === user);
+  if (found) {
+    const inputHash = await sha256(pass);
+    if (inputHash === found.hashedPass) {
+      username = found.username;
+      isAdmin = false;
+      currentPath = ["home", username];
+      fs = createInitialFS();
+      saveState();
+      document.getElementById("auth-screen").classList.remove("active");
+      document.getElementById("os-selector").classList.add("active");
+      return;
+    }
+  }
+
+  document.getElementById("login-error").textContent = "Usuario o contraseña incorrectos";
+});
+
+document.getElementById("register-form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const user = document.getElementById("reg-username").value.trim();
+  const pass = document.getElementById("reg-password").value;
+  const confirm = document.getElementById("reg-password-confirm").value;
+
+  if (user.length < 3) return document.getElementById("register-error").textContent = "El usuario debe tener al menos 3 caracteres";
+  if (pass.length < 6) return document.getElementById("register-error").textContent = "La contraseña debe tener al menos 6 caracteres";
+  if (pass !== confirm) return document.getElementById("register-error").textContent = "Las contraseñas no coinciden";
+
+  const users = JSON.parse(localStorage.getItem("webcmd_users") || "[]");
+
+  if (users.some(u => u.username === user)) {
+    return document.getElementById("register-error").textContent = "El usuario ya existe";
+  }
+
+  const hashed = await sha256(pass);
+  users.push({ username: user, hashedPass: hashed });
+  localStorage.setItem("webcmd_users", JSON.stringify(users));
+
+  alert("¡Cuenta creada correctamente!\nAhora inicia sesión.");
+  document.querySelector('.tab[data-tab="login"]').click();
+});
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+
+    document.querySelectorAll(".form").forEach(f => f.classList.remove("active"));
+    document.getElementById(tab.dataset.tab + "-form").classList.add("active");
+
+    document.querySelectorAll(".error").forEach(e => e.textContent = "");
+  });
+});
+
+// ── Selector OS y terminal ──
+function selectOS(os) {
+  currentOS = os;
+  saveState();
+  showTerminal();
+}
+
+function switchOS() {
+  currentOS = currentOS === "linux" ? "windows" : "linux";
+  saveState();
+  showTerminal();
+}
+
+function logout() {
+  localStorage.removeItem("webcmd_state");
+  location.reload();
+}
+
 function showTerminal() {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("terminal-screen").classList.add("active");
+
   document.getElementById("output").innerHTML = "";
-  append(`<span style="color:#0a0">WebCMD 2026 — Sesión: ${username}${isAdmin ? " (ADMIN)" : ""}</span><br>`);
-  append("Escribe 'help' para ver todos los comandos");
+  appendOutput(`<span style="color:#0a0">WebCMD v2026 — Sesión iniciada como ${username}${isAdmin ? " (ADMIN)" : ""}</span><br>`);
+  appendOutput("Escribe 'help' para ver comandos disponibles.", "success");
+
   updatePrompt();
 
   const input = document.getElementById("command-input");
   input.focus();
+
   input.onkeydown = e => {
-    if (e.key === "Enter") { executeCommand(input.value.trim()); input.value = ""; }
-    if (e.key === "ArrowUp" && historyIndex > 0) input.value = commandHistory[--historyIndex];
-    if (e.key === "ArrowDown") {
+    if (e.key === "Enter") {
+      const cmd = input.value.trim();
+      if (cmd) {
+        appendOutput(`<span style="color:#0f0">${document.getElementById("prompt").textContent}</span>${cmd}`);
+        executeCommand(cmd);
+      }
+      input.value = "";
+      historyIndex = commandHistory.length;
+    }
+    else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (historyIndex > 0) input.value = commandHistory[--historyIndex];
+    }
+    else if (e.key === "ArrowDown") {
+      e.preventDefault();
       if (historyIndex < commandHistory.length - 1) input.value = commandHistory[++historyIndex];
       else { historyIndex = commandHistory.length; input.value = ""; }
     }
   };
 }
 
-// ====================== REGISTRO Y VERIFICACIÓN ======================
-function showRegister() {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById("register-screen").classList.add("active");
-}
-
-function showLogin() {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById("login-screen").classList.add("active");
-}
-
-document.getElementById("register-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const u = document.getElementById("reg-username").value.trim();
-  const email = document.getElementById("reg-email").value.trim();
-  const pass = document.getElementById("reg-password").value;
-
-  if (u.length < 3) return alert("Usuario muy corto");
-  if (!email.includes("@")) return alert("Correo inválido");
-
-  pendingUser = { username: u, email, hashedPass: hashPassword(pass) };
-
-  verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-  try {
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { username: u, code: verificationCode, email: email });
-    document.getElementById("sent-email").textContent = email;
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById("email-confirm-screen").classList.add("active");
-  } catch (err) {
-    alert("Error enviando correo. Revisa consola (F12)");
-    console.error(err);
-  }
-});
-
-function verifyCode() {
-  const input = document.getElementById("verify-code-input").value.trim();
-  if (input === verificationCode) {
-    let users = JSON.parse(localStorage.getItem("webcmd_users") || "[]");
-    users.push(pendingUser);
-    localStorage.setItem("webcmd_users", JSON.stringify(users));
-    alert("¡Cuenta verificada correctamente! Ya puedes iniciar sesión.");
-    showLogin();
-  } else {
-    alert("Código incorrecto");
-  }
-}
-
-// Login
-document.getElementById("login-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const user = document.getElementById("username").value.trim();
-  const pass = document.getElementById("password").value;
-
-  if (user === ADMIN_USER && btoa(pass) === ADMIN_PASS_ENCODED) {
-    username = ADMIN_USER; isAdmin = true;
-  } else {
-    let users = JSON.parse(localStorage.getItem("webcmd_users") || "[]");
-    const found = users.find(u => u.username === user && u.hashedPass === hashPassword(pass));
-    if (!found) return document.getElementById("login-error").textContent = "Usuario o contraseña incorrectos";
-    username = found.username; isAdmin = false;
-  }
-
-  currentPath = ["home", username];
-  fs = createInitialFS();
-  saveState();
-  document.getElementById("login-screen").classList.remove("active");
-  document.getElementById("os-selector").classList.add("active");
-});
-
-function selectOS(os) { currentOS = os; saveState(); showTerminal(); }
-function switchOS() { currentOS = currentOS === "linux" ? "windows" : "linux"; saveState(); showTerminal(); }
-function logout() { localStorage.removeItem("webcmd_state"); location.reload(); }
-
-// Iniciar
+// ── Inicio ──
 loadState();
-if (username) showTerminal();
-else document.getElementById("login-screen").classList.add("active");
+if (username) {
+  showTerminal();
+} else {
+  document.getElementById("auth-screen").classList.add("active");
+}
