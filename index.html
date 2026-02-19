@@ -9,23 +9,23 @@
 </head>
 <body>
 
-  <!-- Pantalla de login -->
+  <!-- Login -->
   <div id="login-screen" class="screen active">
     <div class="login-box">
       <h1>WebCMD</h1>
-      <p>Terminal Online</p>
+      <p>Terminal Online 2026</p>
       <form id="login-form">
         <input type="text" id="username" placeholder="Usuario" autocomplete="off" required>
         <input type="password" id="password" placeholder="Contraseña" required>
         <button type="submit">Iniciar sesión</button>
       </form>
-      <p style="margin:20px 0 10px; color:#0a0;">¿No tienes cuenta?</p>
+      <p style="margin:20px 0 10px; color:#0a0;">¿Nuevo aquí?</p>
       <button onclick="showRegister()" class="reg-btn">Registrarse</button>
       <div id="login-error" class="error"></div>
     </div>
   </div>
 
-  <!-- Pantalla de registro -->
+  <!-- Registro -->
   <div id="register-screen" class="screen">
     <div class="login-box">
       <h1>Crear cuenta</h1>
@@ -35,36 +35,28 @@
         <input type="password" id="reg-password" placeholder="Contraseña" required>
         <button type="submit">Registrarse</button>
       </form>
-      <button onclick="showLogin()" class="back-btn">Volver</button>
+      <button onclick="showLogin()" class="back-btn">Volver al login</button>
     </div>
   </div>
 
-  <!-- Pantalla de verificación de correo -->
+  <!-- Verificación correo -->
   <div id="email-confirm-screen" class="screen">
     <div class="login-box">
       <h1>Verifica tu correo</h1>
-      <p>Te hemos enviado un código de 6 dígitos a:</p>
-      <p id="sent-email" style="color:#0ff; font-size:1.3em; margin:15px 0;"></p>
-
-      <div class="fake-email">
-        <strong>Asunto:</strong> Verifica tu cuenta WebCMD<br><br>
-        Hola <span id="email-username"></span>,<br><br>
-        Tu código es: <strong id="shown-code">------</strong><br><br>
-        (Si no lo ves en la bandeja, revisa spam)
-      </div>
-
-      <input type="text" id="verify-code-input" placeholder="Pega aquí el código de 6 dígitos" maxlength="6" style="margin:20px 0; width:100%; text-align:center; font-size:1.4em;">
-      <button onclick="verifyCode()" style="background:#0f0; color:#000; padding:12px; font-size:1.1em;">Verificar y activar cuenta</button>
-      <button onclick="showLogin()" style="margin-top:15px;">Cancelar</button>
+      <p>Te enviamos un código a:</p>
+      <p id="sent-email" style="color:#0ff;font-size:1.4em;margin:15px 0;"></p>
+      <input type="text" id="verify-code-input" placeholder="Código de 6 dígitos" maxlength="6" style="font-size:1.6em;text-align:center;letter-spacing:10px;">
+      <button onclick="verifyCode()" style="margin-top:20px;background:#0f0;color:#000;">Verificar cuenta</button>
+      <button onclick="showLogin()" style="margin-top:10px;">Cancelar</button>
     </div>
   </div>
 
-  <!-- Selector de SO -->
+  <!-- Selector OS -->
   <div id="os-selector" class="screen">
     <div class="selector-box">
-      <h1>Elige tu terminal</h1>
-      <button onclick="selectOS('linux')" class="os-btn linux-btn">Linux (bash)</button>
-      <button onclick="selectOS('windows')" class="os-btn windows-btn">Windows (cmd)</button>
+      <h1>Elige entorno</h1>
+      <button onclick="selectOS('linux')" class="os-btn linux-btn">Linux Bash</button>
+      <button onclick="selectOS('windows')" class="os-btn windows-btn">Windows CMD</button>
       <button onclick="logout()" class="logout-btn">Salir</button>
     </div>
   </div>
